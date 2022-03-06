@@ -4,17 +4,17 @@
 
     //Создаём и возвращаем заголовок приложения
     function createAppTitle(title) {
-        let appTitle = document.createElement('h2');
+        const appTitle = document.createElement('h2');
         appTitle.innerHTML = title;
         return appTitle;
     }
 
     //создаём и возврааем форму для создания дела
     function createTodoItemForm() {
-        let form = document.createElement('form');
-        let input = document.createElement('input');
-        let buttonWrapper = document.createElement('div');
-        let btn = document.createElement('button');
+        const form = document.createElement('form');
+        const input = document.createElement('input');
+        const buttonWrapper = document.createElement('div');
+        const btn = document.createElement('button');
 
         form.classList.add('input-group', 'mb-3');
         input.classList.add('form-control');
@@ -47,17 +47,20 @@
 
     //Создаём и возвращаем список элементов
     function createTodoList(){
-        let list = document.createElement('ul');
+        const list = document.createElement('ul');
         list.classList.add('list-group');
         return list;
     }
 
     function createTodoItem(name) {
-        let item = document.createElement('li');
+        const item = document.createElement('li');
         //Помещаем кнопки в элемент
-        let buttonGroup = document.createElement('div');
-        let doneButton = document.createElement('button');
-        let deleteButton = document.createElement('button');
+        const buttonGroup = document.createElement('div');
+        const doneButton = document.createElement('button');
+        const deleteButton = document.createElement('button');
+
+        const randomId = Math.round(Math.random() * 1000);
+        item.id = randomId;
     
         //стили для эдемента списка, а так же для кнопок в правой части с помощью flex
         item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'aligin-items-center');
@@ -73,92 +76,107 @@
         buttonGroup.append(doneButton);
         buttonGroup.append(deleteButton);
         item.append(buttonGroup);
-
-        
     
         //Приложению нужен доступ к самому эл-ту и кнопкам, чтобы обрабатывать события
         return {
             item,
+            buttonGroup,
             doneButton,
-            deleteButton,
+            deleteButton
         };
-    }
+    };
 
-    function createTodoApp (container, title, key) {
-        let todeAppTitle = createAppTitle(title);
-        let todoItemForm = createTodoItemForm();
-        let todoList = createTodoList();
-
-        function recirculation (arr) {
-            for (let newArr of arr){
-                if (newArr.done === false) {
-                    newArr.done = true;
-                } else {
-                    newArr.done = false;
-                }
-            }
+    // Перезаписываем состояние дел в массиве
+    function recirculation(arr, item) {
+        for (let obj of arr) {
+            if (obj.id === item.id && obj.done === false) {
+                obj.done = true;
+            } else if (obj.id === item.id && obj.done === true) {
+                obj.done = false;
+            };
         };
-        
-        if (localStorage.getItem('defaultCases') != undefined) {
-           casesArr = JSON.parse(localStorage.getItem('defaultCases'))
-           };
+    };
 
-        for (let obj of casesArr) {
-            let todoItemMy = createTodoItem(obj.name);
-            todoList.append(todoItemMy.item);
+    // Обработчик состояния дела
+    function doneBtn(btn, item, arr) {
+        btn.addEventListener('click', function() {
+            arr = JSON.parse(localStorage.getItem(key));
+            item.classList.toggle('list-group-item-success');
+            recirculation(arr, item);
+            localStorage.setItem(key, JSON.stringify(arr));
+        });
+    };
 
-            if (obj.done == true) {
-                todoItemMy.item.classList.toggle('list-group-item-success');
-                };
-                
-                todoItemMy.doneButton.addEventListener('click', function() {
-                    todoItemMy.item.classList.toggle('list-group-item-success');
-                  recirculation(casesArr);
-                  console.log(casesArr);
-                  localStorage.setItem('defaultCases', JSON.stringify(casesArr));
-                });
-                
-                 todoItemMy.deleteButton.addEventListener('click', function() {
-                  if(confirm('Вы уверены?')) {
-                    todoItemMy.item.remove();
-                    }
-                });
-            
-        };
-
-      if (localStorage.getItem(key) != undefined) {
-        todoArray = JSON.parse(localStorage.getItem(key))
-      }
-      
-  
-      for (let obj of todoArray) {
-        let todoItem = createTodoItem(obj.name);
-        todoList.append(todoItem.item);
-        
-        if (obj.done == true) {
-        todoItem.item.classList.toggle('list-group-item-success');
-        };
-        
-        todoItem.doneButton.addEventListener('click', function() {
-          todoItem.item.classList.toggle('list-group-item-success');
-          recirculation(todoArray);
-          console.log(todoArray);
-          localStorage.setItem(key, JSON.stringify(todoArray));
-         });
-        
-        todoItem.deleteButton.addEventListener('click', function() {
-          if(confirm('Вы уверены?')) {
-                todoItem.item.remove();
+    // Обработчик удаления дела
+    function removeBtn (btn, item, arr) {
+        btn.addEventListener('click', function() {
+            if(confirm('Вы уверены?')) {
+                arr = JSON.parse(localStorage.getItem(key));
+                const newList = todoArray.filter(obj => obj.id !== item.id);
+                localStorage.setItem(key, JSON.stringify(newList))
+                console.log(newList);
+                item.remove();
+                location.reload();         
             }
         });
-      }
+    };
+
+    function createTodoApp (container, title, key) {
+        const todeAppTitle = createAppTitle(title);
+        const todoItemForm = createTodoItemForm();
+        const todoList = createTodoList();
+
+        container.append(todeAppTitle, todoItemForm.form, todoList);
       
-        container.append(todeAppTitle);
-        container.append(todoItemForm.form);
-        container.append(todoList);
+        if (casesArr) {
+            for (let obj of casesArr) {
+                let todoItemMy = createTodoItem(todoItemForm.input.value);
+                todoItemMy.item.textContent = obj.name;
+                todoItemMy.item.id = obj.id;
+                // todoItem.item.name = obj.name
+    
+                if (obj.done == true) {
+                    todoItemMy.item.classList.toggle('list-group-item-success');
+                } else if (obj.done == false) {
+                    todoItemMy.item.classList.remove('list-group-item-success');
+                };
+                    
+                doneBtn(todoItemMy.doneButton, todoItemMy.item, casesArr);
+                removeBtn(todoItemMy.deleteButton, todoItemMy.item, casesArr);
+
+                todoList.append(todoItemMy.item);
+                todoItemMy.item.append(todoItemMy.buttonGroup)
+            };
+        };
         
-    // браузер создаёт событие submit на форме по нажатию на Enter или на кнопку создания дела
-    todoItemForm.form.addEventListener('submit', function(e) {
+
+        // Проверяем, если массив в хранилище не пустой, то обращаемся к нему,
+        // задаём состояние объектам, реализуем взаимодействие с объектоми,
+        // и отрисовываем их на странице.
+        if (localStorage.getItem(key) !== null) {
+            todoArray = JSON.parse(localStorage.getItem(key))
+          }
+          for (const obj of todoArray) {
+            const todoItem = createTodoItem(todoItemForm.input.value);
+            todoItem.item.textContent = obj.name;
+            todoItem.item.id = obj.id;
+
+            if (obj.done == true) {
+                todoItem.item.classList.toggle('list-group-item-success');
+            } else if (obj.done == false) {
+                todoItem.item.classList.remove('list-group-item-success');
+            };
+            
+            doneBtn(todoItem.doneButton, todoItem.item, todoArray);
+            removeBtn(todoItem.deleteButton, todoItem.item, todoArray);
+
+            todoList.append(todoItem.item);
+            todoItem.item.append(todoItem.buttonGroup);
+          };
+        
+        // браузер создаёт событие submit на форме по нажатию на Enter или на кнопку создания дела
+        todoItemForm.form.addEventListener('submit', function(e) {
+
             // необходимо для того, что бы предотвратить стандартное действие браузера
             // в данном случае, мы хотим, чтобы стр перезагрузилась при нажатии
             e.preventDefault();
@@ -170,44 +188,29 @@
         
             let todoItem = createTodoItem(todoItemForm.input.value);
 
-            let temp = {};
+            // Создаёю ключи для объектов, пушу в массив и записываю в localStorage
+            const temp = {};
             temp.name = todoItemForm.input.value;
+            temp.id = todoItem.item.id;
             temp.done = false;
-            let i = todoArray.length;
-            todoArray[i] = temp;
+            todoArray.push(temp);
             console.log(todoArray);
             localStorage.setItem(key, JSON.stringify(todoArray));
 
+            //добавляем обработчики
+            doneBtn(todoItem.doneButton, todoItem.item, todoArray);
+            removeBtn(todoItem.deleteButton, todoItem.item, todoArray);
 
+            // создаём и добавляем в список новое дело, с названием и поля
+            todoList.append(todoItem.item);
 
-        //добавляем обработчик на кнопки
-        todoItem.doneButton.addEventListener('click', function() {
-            todoItem.item.classList.toggle('list-group-item-success');
-            recirculation(todoArray);
-            console.log(todoArray);
-            localStorage.setItem(key, JSON.stringify(todoArray));
-        });
-        todoItem.deleteButton.addEventListener('click', function() {
-            if(confirm('Вы уверены?')) {
-                todoItem.item.remove();
-                localStorage.removeItem(key);
-            }
-        });
+            // обнуляем значение в поле, что бы не пришлось стирать его в ручную
+            todoItemForm.input.value = '';
 
-        
-
-        // создаём и добавляем в список новое дело, с названием и поля
-        todoList.append(todoItem.item);
-
-        // обнуляем значение в поле, что бы не пришлось стирать его в ручную
-        todoItemForm.input.value = '';
+    
         });
     };
 
     window.createTodoApp = createTodoApp;
 
-
 })();
-// 1) Сделать проверку по имени для состояния дела.
-// 2) Реализовать удаление объекта из дела(ключа).
-// 3) Реализовать возможность прогрузки дефолтных дел для определённой страницы.
