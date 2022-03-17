@@ -29,12 +29,7 @@
         form.append(buttonWrapper);
 
         input.addEventListener('input', function () {
-            if (input.value.length == 0) {
-                btn.disabled = true;
-            } else if(input.value.length > 0) {
-                btn.disabled = false;
-            };
-
+            btn.disabled = !input.value.length;
         })
 
         return {
@@ -86,39 +81,31 @@
         };
     };
 
-    // Перезаписываем состояние дел в массиве
-    function recirculation(arr, item) {
-        for (let obj of arr) {
-            if (obj.id === item.id && obj.done === false) {
-                obj.done = true;
-            } else if (obj.id === item.id && obj.done === true) {
-                obj.done = false;
-            };
-        };
+    function toggleDone (item) {
+        let todo = todoArray.find(el => el.id === item.id);
+        todo.done = !todo.done;
     };
 
-    // Обработчик состояния дела
-    function doneBtn(btn, item, arr) {
+    function doneBtn (btn, item) {
         btn.addEventListener('click', function() {
-            arr = JSON.parse(localStorage.getItem(key));
             item.classList.toggle('list-group-item-success');
-            recirculation(arr, item);
-            localStorage.setItem(key, JSON.stringify(arr));
+            toggleDone(item);
+            save(key);
         });
     };
 
-    // Обработчик удаления дела
-    function removeBtn (btn, item, arr) {
+    function deleteBtn (btn, item) {
         btn.addEventListener('click', function() {
             if(confirm('Вы уверены?')) {
-                arr = JSON.parse(localStorage.getItem(key));
-                const newList = todoArray.filter(obj => obj.id !== item.id);
-                localStorage.setItem(key, JSON.stringify(newList))
-                console.log(newList);
+                todoArray = todoArray.filter(el => el.id != item.id);
                 item.remove();
-                location.reload();         
-            }
+                save(key);
+            };
         });
+    };
+
+    function save(key) {
+        localStorage.setItem(key, JSON.stringify(todoArray));
     };
 
     function createTodoApp (container, title, key) {
@@ -127,53 +114,28 @@
         const todoList = createTodoList();
 
         container.append(todeAppTitle, todoItemForm.form, todoList);
-      
-        if (casesArr) {
-            for (let obj of casesArr) {
-                let todoItemMy = createTodoItem(todoItemForm.input.value);
-                todoItemMy.item.textContent = obj.name;
-                todoItemMy.item.id = obj.id;
-                // todoItem.item.name = obj.name
-    
-                if (obj.done == true) {
-                    todoItemMy.item.classList.toggle('list-group-item-success');
-                } else if (obj.done == false) {
-                    todoItemMy.item.classList.remove('list-group-item-success');
-                };
-                    
-                doneBtn(todoItemMy.doneButton, todoItemMy.item, casesArr);
-                removeBtn(todoItemMy.deleteButton, todoItemMy.item, casesArr);
 
-                todoList.append(todoItemMy.item);
-                todoItemMy.item.append(todoItemMy.buttonGroup)
-            };
-        };
-        
+        if (localStorage.getItem(key)) {
+            todoArray = JSON.parse(localStorage.getItem(key));
+        }
 
-        // Проверяем, если массив в хранилище не пустой, то обращаемся к нему,
-        // задаём состояние объектам, реализуем взаимодействие с объектоми,
-        // и отрисовываем их на странице.
-        if (localStorage.getItem(key) !== null) {
-            todoArray = JSON.parse(localStorage.getItem(key))
-          }
-          for (const obj of todoArray) {
+        for (let obj of todoArray) {
             const todoItem = createTodoItem(todoItemForm.input.value);
             todoItem.item.textContent = obj.name;
             todoItem.item.id = obj.id;
 
             if (obj.done == true) {
-                todoItem.item.classList.toggle('list-group-item-success');
-            } else if (obj.done == false) {
-                todoItem.item.classList.remove('list-group-item-success');
+             todoItem.item.classList.toggle('list-group-item-success');
             };
-            
-            doneBtn(todoItem.doneButton, todoItem.item, todoArray);
-            removeBtn(todoItem.deleteButton, todoItem.item, todoArray);
+        
+            doneBtn(todoItem.doneButton, todoItem.item);
+            deleteBtn(todoItem.deleteButton, todoItem.item);
 
             todoList.append(todoItem.item);
             todoItem.item.append(todoItem.buttonGroup);
-          };
-        
+        };
+
+
         // браузер создаёт событие submit на форме по нажатию на Enter или на кнопку создания дела
         todoItemForm.form.addEventListener('submit', function(e) {
 
@@ -195,11 +157,11 @@
             temp.done = false;
             todoArray.push(temp);
             console.log(todoArray);
-            localStorage.setItem(key, JSON.stringify(todoArray));
+            save(key);
 
             //добавляем обработчики
-            doneBtn(todoItem.doneButton, todoItem.item, todoArray);
-            removeBtn(todoItem.deleteButton, todoItem.item, todoArray);
+            doneBtn(todoItem.doneButton, todoItem.item);
+            deleteBtn(todoItem.deleteButton, todoItem.item);
 
             // создаём и добавляем в список новое дело, с названием и поля
             todoList.append(todoItem.item);
